@@ -20,6 +20,10 @@ x86/
 bld/
 [Bb]in/
 [Oo]bj/
+Unicode Debug/
+Unicode Release/
+ANSI Debug/
+ANSI Release/
 
 # Visual Studio 2015 cache/options directory
 .vs/

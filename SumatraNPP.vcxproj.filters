@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="SumatraNPP.cpp" />
+    <ClCompile Include="PluginDefinition.cpp" />
+    <ClCompile Include="DockingFeature\MainPanelDlg.cpp" />
+    <ClCompile Include="DockingFeature\StaticDialog.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="menuCmdID.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="DockingFeature\Docking.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="DockingFeature\DockingDlgInterface.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="DockingFeature\dockingResource.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Notepad_plus_msgs.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginDefinition.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginInterface.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="DockingFeature\resource.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Scintilla.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="DockingFeature\StaticDialog.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="DockingFeature\Window.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="DockingFeature\MainPanelDlg.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header files">
+      <UniqueIdentifier>{8f7577e9-f5bf-417e-b915-62f24fa4b0b9}</UniqueIdentifier>
+      <Extensions>
+      </Extensions>
+    </Filter>
+    <Filter Include="Resource files">
+      <UniqueIdentifier>{b148c133-7344-4467-ab59-4196672980aa}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="DockingFeature\mainPanel.rc">
+      <Filter>Resource files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="DockingFeature\sumatrapdf-icon.ico">
+      <Filter>Resource files</Filter>
+    </Image>
+  </ItemGroup>
+</Project>
