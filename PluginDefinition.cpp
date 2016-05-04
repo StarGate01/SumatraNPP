@@ -82,7 +82,7 @@ BOOL getPDFFile(TCHAR* fullPathName)
 {
 	::PathRemoveExtension(fullPathName);
 	TCHAR* pdfPathName = new TCHAR[wcslen(fullPathName) + 4];
-	swprintf(pdfPathName, L"%s.pdf", fullPathName);
+	swprintf(pdfPathName, (wcslen(fullPathName) + 4) * sizeof(TCHAR), L"%s.pdf", fullPathName);
 	realloc(fullPathName, wcslen(pdfPathName) * sizeof(TCHAR) + 1);
 	memcpy(fullPathName, pdfPathName, wcslen(pdfPathName) * sizeof(TCHAR) + 1);
 	DWORD dwAttrib = ::GetFileAttributes(pdfPathName);
@@ -145,7 +145,7 @@ void loadCurrentPDF()
 	else
 	{
 		TCHAR buffer[MAX_PATH + 30];
-		swprintf(buffer, L"PDF file does not exist!\n%s", fullPathName);
+		swprintf(buffer, MAX_PATH + 30, L"PDF file does not exist!\n%s", fullPathName);
 		::MessageBox(nppData._nppHandle, buffer, ERRTITLE, MB_ICONERROR | MB_OK);
 	}
 }
@@ -200,19 +200,19 @@ void forwardSearch()
 			{
 				_mainPanel.forwardSearch(pdfFullPathName, fullPathName, cLine, cCol);
 			}
-			else
+			/*else
 			{
 				TCHAR buffer[MAX_PATH + 30];
 				swprintf(buffer, L"PDF file does not exist!\n%s", fullPathName);
 				::MessageBox(nppData._nppHandle, buffer, ERRTITLE, MB_ICONERROR | MB_OK);
-			}
+			}*/
 		}
-		else
+		/*else
 		{
 			TCHAR buffer[MAX_PATH + 30];
 			swprintf(buffer, L"TEX file does not exist!\n%s", fullPathName);
 			::MessageBox(nppData._nppHandle, buffer, ERRTITLE, MB_ICONERROR | MB_OK);
-		}
+		}*/
 	}
 }
 

@@ -49,6 +49,24 @@ BOOL CALLBACK MainPanelDlg::run_dlgProc(HWND hwnd, UINT message, WPARAM wParam, 
 			if (hChild) ::RedrawWindow(hChild, uRect, NULL, RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_INTERNALPAINT);
 			break;
 		}
+		case WM_COPYDATA :
+		{
+			HWND hChild = ::FindWindowEx(hwnd, nullptr, nullptr, nullptr);
+			if (hChild)
+			{
+				COPYDATASTRUCT *cds = (COPYDATASTRUCT *)lParam;
+				if (cds && 0x4C5255 == cds->dwData && (HWND)wParam == hChild)
+				{
+					char* lpData = (char *)cds->lpData;
+					int newSize = strlen(lpData) + 1;
+					TCHAR* wideLpData = new TCHAR[newSize];
+					size_t convertedChars = 0;
+					mbstowcs_s(&convertedChars, wideLpData, newSize, lpData, _TRUNCATE);
+					::ShellExecute(hChild, L"open", wideLpData, NULL, NULL, SW_SHOW);
+					return TRUE;
+				}
+			}
+		}
 		case WM_DDE_ACK :
 		{
 			handleDDEack(wParam, lParam);
@@ -91,7 +109,7 @@ LRESULT MainPanelDlg::openPDF(TCHAR * fileName)
 		SendMessage(hChild, WM_DESTROY, NULL, NULL);
 	}
 	TCHAR cmdLine[MAX_PATH+60];
-	swprintf(cmdLine, L"SumatraPDF.exe -plugin %d \"%s\"", (int)_hSelf, fileName);
+	swprintf(cmdLine, MAX_PATH + 60, L"SumatraPDF.exe -plugin %d \"%s\"", (int)_hSelf, fileName);
 	STARTUPINFO si = { sizeof(si) };
 	PROCESS_INFORMATION pi;
 	if (!CreateProcess(0, cmdLine, 0, 0, FALSE, 0, 0, 0, &si, &pi)) return E_FAIL;
@@ -104,7 +122,7 @@ LRESULT MainPanelDlg::openPDF(TCHAR * fileName)
 void MainPanelDlg::forwardSearch(TCHAR* pdfFile, TCHAR* srcFile, int lineNr, int colNr)
 {
 	TCHAR buffer[MAX_PATH * 2 + 35];
-	swprintf(buffer, L"[ForwardSearch(\"%s\",\"%s\",%d,%d,0,0)]", pdfFile, srcFile, lineNr, colNr);
+	swprintf(buffer, MAX_PATH * 2 + 35, L"[ForwardSearch(\"%s\",\"%s\",%d,%d,0,0)]", pdfFile, srcFile, lineNr, colNr);
 	return executeDDE(buffer);
 }
 
