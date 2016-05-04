@@ -48,8 +48,11 @@ public :
 	{
 		_hParent = parent2set;
 	};
-
-	virtual void openPDF(TCHAR* fileName);
+	virtual void connectDDE();
+	virtual void executeDDE(TCHAR* ddePayload);
+	virtual void disconnectDDE();
+	virtual LRESULT openPDF(TCHAR* fileName);
+	virtual void forwardSearch(TCHAR* pdfFile, TCHAR* srcFile, int lineNr, int colNr);
 
 protected :
 	virtual BOOL CALLBACK run_dlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -58,12 +61,8 @@ private :
 	HWND hwnd_sumatra;
 	ATOM ddeAppAtom, ddeTopicAtom;
 	DDEState ddeState = NotReady;
-	char * ddePayload;
 	HGLOBAL ddePayloadGlobal = nullptr;
-	virtual HRESULT sendDDE(char * command);
-	virtual LRESULT handleDDEack(WPARAM wParam, LPARAM lParam);
-	virtual LRESULT terminateDDE();
-	virtual LRESULT executeDDE();
+	virtual void handleDDEack(WPARAM wParam, LPARAM lParam);
 
 };
 

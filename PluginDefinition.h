@@ -25,18 +25,23 @@
 #define TOGGLEDLG -1
 #define SHOWDLG 1
 #define HIDEDLG 0
+#define ERRTITLE L"SumatraNPP - Error"
 
 const TCHAR NPP_PLUGIN_NAME[] = L"SumatraNPP";
-const int nbFunc = 2;
+const int nbFunc = 4;
 
 void pluginInit(HANDLE hModule);
 void pluginCleanUp();
 void commandMenuInit();
 void commandMenuCleanUp();
 void setCommand(size_t index, TCHAR *cmdName, PFUNCPLUGINCMD pFunc, UCHAR cShortCut);
-
+TCHAR* getFullCurrentFileName();
+BOOL getPDFFile(TCHAR* fullPathName);
+void reloadLastPDF();
+void loadPDFbyName(TCHAR* fullPathName);
 void showMainPanelDlg();
 void toggleMainPanelDlgEx(int show);
-void loadCpdf();
+void loadCurrentPDF();
+void forwardSearch();
 
 #endif //PLUGINDEFINITION_H

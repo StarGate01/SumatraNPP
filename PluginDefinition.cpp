@@ -24,6 +24,7 @@ MainPanelDlg _mainPanel;
 FuncItem funcItem[nbFunc];
 NppData nppData;
 HICON icon;
+TCHAR* lastPDFFile;
 
 void pluginInit(HANDLE hModule)
 {
@@ -33,12 +34,15 @@ void pluginInit(HANDLE hModule)
 
 void pluginCleanUp()
 {
+	if (_mainPanel.isCreated()) _mainPanel.disconnectDDE();
 }
 
 void commandMenuInit()
 {
     setCommand(0, L"Show Sumatra window", showMainPanelDlg, 0);
-	setCommand(1, L"Load corresponding pdf document", loadCpdf, 0);
+	setCommand(1, L"Load corresponding PDF document", loadCurrentPDF, 0);
+	setCommand(2, L"Reload last PDF document", reloadLastPDF, 0);
+	setCommand(3, L"Forward search", forwardSearch, 0);
 }
 
 void commandMenuCleanUp()
@@ -77,27 +81,92 @@ void toggleMainPanelDlgEx(int show)
 	_mainPanel.display(show == SHOWDLG);
 }
 
-void loadCpdf()
+void loadCurrentPDF()
 {
-	
-	LRESULT currentBufferId = ::SendMessage(nppData._nppHandle, NPPM_GETCURRENTBUFFERID, NULL, NULL);
-	if (currentBufferId == -1) return;
-	int length = ::SendMessage(nppData._nppHandle, NPPM_GETFULLPATHFROMBUFFERID, currentBufferId, NULL);
-	TCHAR* fullPathName = new TCHAR[length + 1];
-	::SendMessage(nppData._nppHandle, NPPM_GETFULLPATHFROMBUFFERID, currentBufferId, (LPARAM)fullPathName);
-	::PathRemoveExtension(fullPathName);
-	TCHAR* pdfPathName = new TCHAR[wcslen(fullPathName) + 5];
-	swprintf(pdfPathName, L"%s.pdf", fullPathName);
-	DWORD dwAttrib = ::GetFileAttributes(pdfPathName);
-	if (dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY))
+	TCHAR* fullPathName = getFullCurrentFileName();
+	if(getPDFFile(fullPathName))
 	{
-		showMainPanelDlg();
-		_mainPanel.openPDF(pdfPathName);
+		loadPDFbyName(fullPathName);
 	}
 	else
 	{
 		TCHAR buffer[MAX_PATH + 30];
-		swprintf(buffer, L"PDF file does not exist: %s", pdfPathName);
-		::MessageBox(nppData._nppHandle, buffer, L"SumatraNPP - Error", MB_ICONERROR | MB_OK);
+		swprintf(buffer, L"PDF file does not exist!\n%s", fullPathName);
+		::MessageBox(nppData._nppHandle, buffer, ERRTITLE, MB_ICONERROR | MB_OK);
 	}
+}
+
+void reloadLastPDF()
+{
+	if (lastPDFFile)
+	{
+		DWORD dwAttrib = ::GetFileAttributes(lastPDFFile);
+		if(dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY))
+		{
+			loadPDFbyName(lastPDFFile);
+		}
+	}
+}
+
+void loadPDFbyName(TCHAR* fullPathName)
+{
+	showMainPanelDlg();
+	if (_mainPanel.openPDF(fullPathName) != S_OK)
+	{
+		::MessageBox(nppData._nppHandle, L"Cannot start SumatraPDF.exe\nEither the file was not found,\nor the DDE connection failed!", ERRTITLE, MB_ICONERROR | MB_OK);
+	}
+	lastPDFFile = fullPathName;
+}
+
+void forwardSearch()
+{
+	if (_mainPanel.isCreated())
+	{
+		int cLine = ::SendMessage(nppData._nppHandle, NPPM_GETCURRENTLINE, NULL, NULL);
+		int cCol = ::SendMessage(nppData._nppHandle, NPPM_GETCURRENTCOLUMN, NULL, NULL);
+		TCHAR* fullPathName = getFullCurrentFileName();
+		DWORD dwAttrib = ::GetFileAttributes(fullPathName);
+		if (dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY))
+		{
+			TCHAR* pdfFullPathName = new TCHAR[wcslen(fullPathName)];
+			memcpy(pdfFullPathName, fullPathName, (wcslen(fullPathName) + 1) * sizeof(TCHAR));
+			if (getPDFFile(pdfFullPathName)) 
+			{
+				_mainPanel.forwardSearch(pdfFullPathName, fullPathName, cLine, cCol);
+			}
+			else
+			{
+				TCHAR buffer[MAX_PATH + 30];
+				swprintf(buffer, L"PDF file does not exist!\n%s", fullPathName);
+				::MessageBox(nppData._nppHandle, buffer, ERRTITLE, MB_ICONERROR | MB_OK);
+			}
+		}
+		else
+		{
+			TCHAR buffer[MAX_PATH + 30];
+			swprintf(buffer, L"TEX file does not exist!\n%s", fullPathName);
+			::MessageBox(nppData._nppHandle, buffer, ERRTITLE, MB_ICONERROR | MB_OK);
+		}
+	}
+}
+
+TCHAR* getFullCurrentFileName()
+{
+	LRESULT currentBufferId = ::SendMessage(nppData._nppHandle, NPPM_GETCURRENTBUFFERID, NULL, NULL);
+	if (currentBufferId == -1) return NULL;
+	int length = ::SendMessage(nppData._nppHandle, NPPM_GETFULLPATHFROMBUFFERID, currentBufferId, NULL);
+	TCHAR* fullPathName = new TCHAR[length + 1];
+	::SendMessage(nppData._nppHandle, NPPM_GETFULLPATHFROMBUFFERID, currentBufferId, (LPARAM)fullPathName);
+	return fullPathName;
+}
+
+BOOL getPDFFile(TCHAR* fullPathName)
+{
+	::PathRemoveExtension(fullPathName);
+	TCHAR* pdfPathName = new TCHAR[wcslen(fullPathName) + 4];
+	swprintf(pdfPathName, L"%s.pdf", fullPathName);
+	realloc(fullPathName, wcslen(pdfPathName) * sizeof(TCHAR) + 1);
+	memcpy(fullPathName, pdfPathName, wcslen(pdfPathName) * sizeof(TCHAR) + 1);
+	DWORD dwAttrib = ::GetFileAttributes(pdfPathName);
+	return (dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
 }

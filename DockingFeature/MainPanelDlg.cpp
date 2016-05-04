@@ -57,78 +57,90 @@ BOOL CALLBACK MainPanelDlg::run_dlgProc(HWND hwnd, UINT message, WPARAM wParam, 
 	return DockingDlgInterface::run_dlgProc(hwnd, message, wParam, lParam);
 }
 
-void MainPanelDlg::openPDF(TCHAR * fileName)
+LRESULT MainPanelDlg::openPDF(TCHAR * fileName)
 {
+	ddeState = NotReady;
 	HWND hChild = ::FindWindowEx(_hSelf, nullptr, nullptr, nullptr);
-	if (hChild) SendMessage(hChild, WM_DESTROY, NULL, NULL);
-	TCHAR cmdLine[MAX_PATH+30];
-	swprintf(cmdLine, L"-plugin %d \"%s\"", (int)_hSelf, fileName);
-	HINSTANCE res = ::ShellExecute(_hSelf, L"open", L"SumatraPDF.exe", cmdLine, nullptr, SW_SHOW);
-	if ((int)res <= 32)
+	if (hChild)
 	{
-		::MessageBox(_hSelf, L"Cannot start SumatraPDF.exe", L"SumatraNPP - Error", MB_ICONERROR | MB_OK);
-		return;
+		disconnectDDE();
+		SendMessage(hChild, WM_DESTROY, NULL, NULL);
 	}
+	TCHAR cmdLine[MAX_PATH+60];
+	swprintf(cmdLine, L"SumatraPDF.exe -plugin %d \"%s\"", (int)_hSelf, fileName);
+	STARTUPINFO si = { sizeof(si) };
+	PROCESS_INFORMATION pi;
+	if (!CreateProcess(0, cmdLine, 0, 0, FALSE, 0, 0, 0, &si, &pi)) return E_FAIL;
+	if (::WaitForInputIdle(pi.hProcess, INFINITE) != S_OK) return E_FAIL;
 	ddeState = Ready;
+	connectDDE();
+	return S_OK;
+}
+
+void MainPanelDlg::forwardSearch(TCHAR* pdfFile, TCHAR* srcFile, int lineNr, int colNr)
+{
+	TCHAR buffer[MAX_PATH * 2 + 35];
+	swprintf(buffer, L"[ForwardSearch(\"%s\",\"%s\",%d,%d,0,0)]", pdfFile, srcFile, lineNr, colNr);
+	return executeDDE(buffer);
 }
 
 #pragma region
 
-LRESULT MainPanelDlg::sendDDE(char * command)
+void MainPanelDlg::connectDDE()
 {
-	if (ddeState != Ready) return E_ABORT;
-	ddePayload = command;
+	if (ddeState != Ready) return;
 	hwnd_sumatra = ::FindWindowEx(_hSelf, nullptr, nullptr, nullptr);
-	if (!hwnd_sumatra) return E_FAIL;
+	if (!hwnd_sumatra) return;
 	ddeState = WaitForInitAck;
-	return ::SendMessage(hwnd_sumatra, WM_DDE_INITIATE, (WPARAM)_hSelf, MAKELPARAM(ddeAppAtom, ddeTopicAtom));
+	::SendMessage(hwnd_sumatra, WM_DDE_INITIATE, (WPARAM)_hSelf, MAKELPARAM(ddeAppAtom, ddeTopicAtom));
 }
 
-LRESULT MainPanelDlg::handleDDEack(WPARAM wParam, LPARAM lParam)
+void MainPanelDlg::disconnectDDE()
+{
+	if (!(ddeState == GotInitAck || ddeState == GotExecAck)) return;
+	::GlobalFree(ddePayloadGlobal);
+	::PostMessage(hwnd_sumatra, WM_DDE_TERMINATE, (WPARAM)_hSelf, NULL);
+}
+
+void MainPanelDlg::handleDDEack(WPARAM wParam, LPARAM lParam)
 {
 	switch (ddeState)
 	{
 		case WaitForInitAck :
 		{
-			if ((HWND)wParam != hwnd_sumatra) return E_FAIL;
-			if (LOWORD(lParam) != ddeAppAtom)
+			if ((HWND)wParam != hwnd_sumatra) return;
+			/*if (LOWORD(lParam) != ddeAppAtom)
 			{
 				ddeState = Ready;
 				return E_FAIL;
-			}
+			}*/
 			ddeState = GotInitAck;
-			return executeDDE();
+			return;
 		}
 		case WaitForExecAck:
 		{
-			if ((HWND)wParam != hwnd_sumatra) return E_FAIL;
-			if((HGLOBAL)HIWORD(lParam) != ddePayloadGlobal || ((DDEACK *)LOWORD(lParam))->fAck == 0)
+			if ((HWND)wParam != hwnd_sumatra) return;
+			/*DDEACK* ackData = new DDEACK();
+			memset(ackData, LOWORD(lParam), 8);
+			if((HGLOBAL)HIWORD(lParam) != ddePayloadGlobal || ackData->fAck == 0)
 			{
 				ddeState = Ready;
 				return E_FAIL;
-			}
+			}*/
 			ddeState = GotExecAck;
-			return terminateDDE();
+			return;
 		}
 	}
-	return E_FAIL;
 }
 
-LRESULT MainPanelDlg::executeDDE()
+void MainPanelDlg::executeDDE(TCHAR* ddePayload)
 {
-	if (ddeState != GotInitAck) return E_FAIL;
-	ddePayloadGlobal = ::GlobalAlloc(GMEM_FIXED, strlen(ddePayload) + 1);
-	memcpy(ddePayloadGlobal, ddePayload, strlen(ddePayload) + 1);
+	if (!(ddeState == GotInitAck || ddeState == GotExecAck)) return;
+	int bufLen = (wcslen(ddePayload) + 1) * sizeof(TCHAR);
+	ddePayloadGlobal = ::GlobalAlloc(GMEM_FIXED, bufLen);
+	memcpy(ddePayloadGlobal, ddePayload, bufLen);
 	ddeState = WaitForExecAck;
-	return ::PostMessage(hwnd_sumatra, WM_DDE_EXECUTE, (WPARAM)_hSelf, (LPARAM)ddePayloadGlobal);
-}
-
-LRESULT MainPanelDlg::terminateDDE()
-{
-	if (!(ddeState == GotInitAck || ddeState == GotExecAck)) return E_FAIL;
-	::GlobalFree(ddePayloadGlobal);
-	ddePayloadGlobal = nullptr;
-	return ::PostMessage(hwnd_sumatra, WM_DDE_TERMINATE, (WPARAM)_hSelf, NULL);
+	::PostMessage(hwnd_sumatra, WM_DDE_EXECUTE, (WPARAM)_hSelf, (LPARAM)ddePayloadGlobal);
 }
 
 #pragma endregion DDE methods
