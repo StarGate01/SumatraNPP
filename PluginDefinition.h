@@ -18,7 +18,7 @@
 #ifndef PLUGINDEFINITION_H
 #define PLUGINDEFINITION_H
 
-#include "PluginInterface.h"
+#include "NPP/PluginInterface.h"
 
 #define MENUID_TEST 0
 #define MENUID_SHOWDLG 1
@@ -28,20 +28,24 @@
 #define ERRTITLE L"SumatraNPP - Error"
 
 const TCHAR NPP_PLUGIN_NAME[] = L"SumatraNPP";
-const int nbFunc = 4;
+const int nbFunc = 6;
 
 void pluginInit(HANDLE hModule);
 void pluginCleanUp();
 void commandMenuInit();
 void commandMenuCleanUp();
-void setCommand(size_t index, TCHAR *cmdName, PFUNCPLUGINCMD pFunc, UCHAR cShortCut);
+void setCommand(size_t index, TCHAR *cmdName, PFUNCPLUGINCMD pFunc);
+
 TCHAR* getFullCurrentFileName();
 BOOL getPDFFile(TCHAR* fullPathName);
-void reloadLastPDF();
 void loadPDFbyName(TCHAR* fullPathName);
-void showMainPanelDlg();
-void toggleMainPanelDlgEx(int show);
+void setMainPanelDlgEx(int show);
+
 void loadCurrentPDF();
+void loadOtherPDF();
+void reloadLastPDF();
+void toggleMainPanelDlg();
 void forwardSearch();
+void about();
 
 #endif //PLUGINDEFINITION_H

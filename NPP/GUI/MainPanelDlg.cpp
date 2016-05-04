@@ -15,10 +15,11 @@
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-#include "MainPanelDlg.h"
-#include "PluginDefinition.h"
 #include <stdio.h>
 #include <Shlobj.h>
+#include "MainPanelDlg.h"
+#include "PluginDefinition.h"
+#include "resource.h"
 
 extern NppData nppData;
 
@@ -53,8 +54,31 @@ BOOL CALLBACK MainPanelDlg::run_dlgProc(HWND hwnd, UINT message, WPARAM wParam, 
 			handleDDEack(wParam, lParam);
 			break;
 		}
+		case WM_DESTROY :
+		{
+			disconnectDDE();
+			break;
+		}
 	}
 	return DockingDlgInterface::run_dlgProc(hwnd, message, wParam, lParam);
+}
+
+MainPanelDlg::MainPanelDlg() : DockingDlgInterface(IDD_PLUGINMAINPANEL_SUMATRANPP)
+{
+	ddeAppAtom = ::GlobalAddAtom(DPPATOM_APP);
+	ddeTopicAtom = ::GlobalAddAtom(DPPATOM_TOPIC);
+};
+
+void MainPanelDlg::init(HINSTANCE hInst, HWND parent, int menuCmdId)
+{
+	cmdId = menuCmdId;
+	DockingDlgInterface::init(hInst, parent);
+}
+
+void MainPanelDlg::display(bool toShow)
+{
+	DockingDlgInterface::display(toShow);
+	::SendMessage(nppData._nppHandle, NPPM_SETMENUITEMCHECK, cmdId, toShow);
 }
 
 LRESULT MainPanelDlg::openPDF(TCHAR * fileName)
@@ -109,24 +133,12 @@ void MainPanelDlg::handleDDEack(WPARAM wParam, LPARAM lParam)
 		case WaitForInitAck :
 		{
 			if ((HWND)wParam != hwnd_sumatra) return;
-			/*if (LOWORD(lParam) != ddeAppAtom)
-			{
-				ddeState = Ready;
-				return E_FAIL;
-			}*/
 			ddeState = GotInitAck;
 			return;
 		}
 		case WaitForExecAck:
 		{
 			if ((HWND)wParam != hwnd_sumatra) return;
-			/*DDEACK* ackData = new DDEACK();
-			memset(ackData, LOWORD(lParam), 8);
-			if((HGLOBAL)HIWORD(lParam) != ddePayloadGlobal || ackData->fAck == 0)
-			{
-				ddeState = Ready;
-				return E_FAIL;
-			}*/
 			ddeState = GotExecAck;
 			return;
 		}

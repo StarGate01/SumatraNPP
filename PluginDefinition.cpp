@@ -15,70 +15,124 @@
 //along with this program; if not, write to the Free Software
 //Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-#include "PluginDefinition.h"
-#include "menuCmdID.h"
-#include "MainPanelDlg.h"
 #include <stdio.h>
+#include <windows.h>
+#include <CommCtrl.h>
+#include <Shlwapi.h>
+#include "PluginDefinition.h"
+#include "NPP/MenuCmdID.h"
+#include "NPP/GUI/MainPanelDlg.h"
+#include "NPP/GUI/resource.h"
 
 MainPanelDlg _mainPanel;
+HINSTANCE hInst;
 FuncItem funcItem[nbFunc];
 NppData nppData;
 HICON icon;
-TCHAR* lastPDFFile;
+HBITMAP iconBitmap;
+TCHAR* lastPDFFile = new TCHAR[0];
 
 void pluginInit(HANDLE hModule)
 {
-	icon = ::LoadIcon((HINSTANCE)hModule, L"IDI_ICON1");
-	_mainPanel.init((HINSTANCE)hModule, NULL);
+	hInst = (HINSTANCE)hModule;
+	icon = ::LoadIcon((HINSTANCE)hModule, MAKEINTRESOURCE(IDI_ICON_MAIN));
+	iconBitmap = ::CreateMappedBitmap((HINSTANCE)hModule, IDB_BITMAP_MAIN, NULL, NULL, 0);
 }
 
 void pluginCleanUp()
 {
-	if (_mainPanel.isCreated()) _mainPanel.disconnectDDE();
+	::DeleteObject(iconBitmap);
 }
 
 void commandMenuInit()
 {
-    setCommand(0, L"Show Sumatra window", showMainPanelDlg, 0);
-	setCommand(1, L"Load corresponding PDF document", loadCurrentPDF, 0);
-	setCommand(2, L"Reload last PDF document", reloadLastPDF, 0);
-	setCommand(3, L"Forward search", forwardSearch, 0);
+    setCommand(0, L"Show SumatraNPP window", toggleMainPanelDlg);
+	setCommand(1, L"Open corresponding PDF", loadCurrentPDF);
+	setCommand(2, L"Open arbitrary PDF", loadOtherPDF);
+	setCommand(3, L"Reload current PDF", reloadLastPDF);
+	setCommand(4, L"Forward search", forwardSearch);
+	setCommand(5, L"About", about);
 }
 
 void commandMenuCleanUp()
 {
-
 }
 
-void setCommand(UINT32 index, TCHAR *cmdName, PFUNCPLUGINCMD pFunc, UCHAR cShortCut)
+void setCommand(UINT32 index, TCHAR *cmdName, PFUNCPLUGINCMD pFunc)
 {
-    lstrcpy(funcItem[index]._itemName, cmdName);
-	funcItem[index]._cmdID = index;
-    funcItem[index]._pFunc = pFunc;
-    funcItem[index]._init2Check = false;
+	lstrcpy(funcItem[index]._itemName, cmdName);
+	funcItem[index]._pFunc = pFunc;
+	funcItem[index]._init2Check = false;
 	funcItem[index]._pShKey = NULL;
 }
 
-void showMainPanelDlg() { toggleMainPanelDlgEx(SHOWDLG); }
-void toggleMainPanelDlgEx(int show)
+#pragma region
+
+TCHAR* getFullCurrentFileName()
 {
-	_mainPanel.setParent(nppData._nppHandle);
+	LRESULT currentBufferId = ::SendMessage(nppData._nppHandle, NPPM_GETCURRENTBUFFERID, NULL, NULL);
+	if (currentBufferId == -1) return NULL;
+	int length = ::SendMessage(nppData._nppHandle, NPPM_GETFULLPATHFROMBUFFERID, currentBufferId, NULL);
+	TCHAR* fullPathName = new TCHAR[length + 1];
+	::SendMessage(nppData._nppHandle, NPPM_GETFULLPATHFROMBUFFERID, currentBufferId, (LPARAM)fullPathName);
+	return fullPathName;
+}
+
+BOOL getPDFFile(TCHAR* fullPathName)
+{
+	::PathRemoveExtension(fullPathName);
+	TCHAR* pdfPathName = new TCHAR[wcslen(fullPathName) + 4];
+	swprintf(pdfPathName, L"%s.pdf", fullPathName);
+	realloc(fullPathName, wcslen(pdfPathName) * sizeof(TCHAR) + 1);
+	memcpy(fullPathName, pdfPathName, wcslen(pdfPathName) * sizeof(TCHAR) + 1);
+	DWORD dwAttrib = ::GetFileAttributes(pdfPathName);
+	return (dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+}
+
+void loadPDFbyName(TCHAR* fullPathName)
+{
+	setMainPanelDlgEx(SHOWDLG);
+	if (_mainPanel.openPDF(fullPathName) != S_OK)
+	{
+		::MessageBox(nppData._nppHandle,
+			L"Cannot start SumatraPDF.exe\nEither the file was not found,\nor the DDE connection failed!",
+			ERRTITLE, MB_ICONERROR | MB_OK);
+	}
+	realloc(lastPDFFile, wcslen(fullPathName) * sizeof(TCHAR) + 1);
+	wcscpy(lastPDFFile, fullPathName);
+}
+
+void setMainPanelDlgEx(int show)
+{
 	if (!_mainPanel.isCreated())
 	{
+		_mainPanel.init(hInst, nppData._nppHandle, funcItem[0]._cmdID);
 		tTbData	data = { 0 };
-		_mainPanel.create(&data);
+		_mainPanel.create(&data, false);
 		data.uMask = DWS_DF_CONT_RIGHT | DWS_ICONTAB;
 		data.pszModuleName = _mainPanel.getPluginFileName();
 		data.hIconTab = icon;
 		data.dlgID = 0;
 		::SendMessage(nppData._nppHandle, NPPM_DMMREGASDCKDLG, 0, (LPARAM)&data);
+		_mainPanel.display(false);
 	}
 	if (show == TOGGLEDLG)
 	{
 		_mainPanel.display(!_mainPanel.isVisible());
-		return;
 	}
-	_mainPanel.display(show == SHOWDLG);
+	else
+	{
+		_mainPanel.display(show == SHOWDLG);
+	}
+}
+
+#pragma endregion Helper functions
+
+#pragma region
+
+void toggleMainPanelDlg()
+{ 
+	setMainPanelDlgEx(TOGGLEDLG);
 }
 
 void loadCurrentPDF()
@@ -96,6 +150,28 @@ void loadCurrentPDF()
 	}
 }
 
+void loadOtherPDF()
+{
+	TCHAR szFile[MAX_PATH];
+	OPENFILENAME ofn = { 0 };
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = NULL;
+	ofn.lpstrFile = szFile;
+	ofn.lpstrFile[0] = '\0';
+	ofn.nMaxFile = sizeof(szFile);
+	ofn.lpstrFilter = L"PDF Files\0*.PDF\0";
+	ofn.nFilterIndex = 1;
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = NULL;
+	ofn.lpstrTitle = L"SumatraNPP - Open PDF File";
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+	if (::GetOpenFileName(&ofn))
+	{
+		loadPDFbyName(ofn.lpstrFile);
+	}
+}
+
 void reloadLastPDF()
 {
 	if (lastPDFFile)
@@ -106,16 +182,6 @@ void reloadLastPDF()
 			loadPDFbyName(lastPDFFile);
 		}
 	}
-}
-
-void loadPDFbyName(TCHAR* fullPathName)
-{
-	showMainPanelDlg();
-	if (_mainPanel.openPDF(fullPathName) != S_OK)
-	{
-		::MessageBox(nppData._nppHandle, L"Cannot start SumatraPDF.exe\nEither the file was not found,\nor the DDE connection failed!", ERRTITLE, MB_ICONERROR | MB_OK);
-	}
-	lastPDFFile = fullPathName;
 }
 
 void forwardSearch()
@@ -150,23 +216,15 @@ void forwardSearch()
 	}
 }
 
-TCHAR* getFullCurrentFileName()
+void about()
 {
-	LRESULT currentBufferId = ::SendMessage(nppData._nppHandle, NPPM_GETCURRENTBUFFERID, NULL, NULL);
-	if (currentBufferId == -1) return NULL;
-	int length = ::SendMessage(nppData._nppHandle, NPPM_GETFULLPATHFROMBUFFERID, currentBufferId, NULL);
-	TCHAR* fullPathName = new TCHAR[length + 1];
-	::SendMessage(nppData._nppHandle, NPPM_GETFULLPATHFROMBUFFERID, currentBufferId, (LPARAM)fullPathName);
-	return fullPathName;
+	::MessageBox(nppData._nppHandle, L"\
+SumatraNPP - SumatraPDF Plugin for Notepad++\n\
+Version 1.0 by Christoph Honal\n\n\
+Use the plugin menu when a .tex file is opened.\n\
+Double click on the text to jump to the \n\
+corresponding position in the PDF.",
+L"SumatraNPP - About", MB_ICONINFORMATION | MB_OK);
 }
 
-BOOL getPDFFile(TCHAR* fullPathName)
-{
-	::PathRemoveExtension(fullPathName);
-	TCHAR* pdfPathName = new TCHAR[wcslen(fullPathName) + 4];
-	swprintf(pdfPathName, L"%s.pdf", fullPathName);
-	realloc(fullPathName, wcslen(pdfPathName) * sizeof(TCHAR) + 1);
-	memcpy(fullPathName, pdfPathName, wcslen(pdfPathName) * sizeof(TCHAR) + 1);
-	DWORD dwAttrib = ::GetFileAttributes(pdfPathName);
-	return (dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
-}
+#pragma endregion Menu handlers

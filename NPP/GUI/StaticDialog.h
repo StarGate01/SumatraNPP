@@ -18,13 +18,18 @@
 #ifndef STATIC_DIALOG_H
 #define STATIC_DIALOG_H
 
-//#include "resource.h"
 #include "Window.h"
-#include "Notepad_plus_msgs.h"
 
-enum PosAlign{ALIGNPOS_LEFT, ALIGNPOS_RIGHT, ALIGNPOS_TOP, ALIGNPOS_BOTTOM};
+enum PosAlign
+{
+	ALIGNPOS_LEFT,
+	ALIGNPOS_RIGHT, 
+	ALIGNPOS_TOP, 
+	ALIGNPOS_BOTTOM
+};
 
-struct DLGTEMPLATEEX {
+struct DLGTEMPLATEEX 
+{
       WORD   dlgVer;
       WORD   signature;
       DWORD  helpID;
@@ -36,37 +41,24 @@ struct DLGTEMPLATEEX {
       short  cx;
       short  cy;
       // The structure has more fields but are variable length
-} ;
+};
 
 class StaticDialog : public Window
 {
 public :
-	StaticDialog() : Window() {};
-	~StaticDialog(){
-		if (isCreated()) {
-			::SetWindowLongPtr(_hSelf, GWL_USERDATA, (long)NULL);	//Prevent run_dlgProc from doing anything, since its virtual
-			destroy();
-		}
-	};
+	StaticDialog();
+	virtual ~StaticDialog();
 	virtual void create(int dialogID, bool isRTL = false);
-
-    virtual bool isCreated() const {
-		return (_hSelf != NULL);
-	};
-
-	void goToCenter();
-    void destroy() {
-		::SendMessage(_hParent, NPPM_MODELESSDIALOG, MODELESSDIALOGREMOVE, (WPARAM)_hSelf);
-		::DestroyWindow(_hSelf);
-	};
+	virtual bool isCreated();
+	virtual void goToCenter();
+	virtual void destroy();
 
 protected :
 	RECT _rc;
 	static BOOL CALLBACK dlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 	virtual BOOL CALLBACK run_dlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) = 0;
-
-    void alignWith(HWND handle, HWND handle2Align, PosAlign pos, POINT & point);
-	HGLOBAL makeRTLResource(int dialogID, DLGTEMPLATE **ppMyDlgTemplate);
+    virtual void alignWith(HWND handle, HWND handle2Align, PosAlign pos, POINT & point);
+	virtual HGLOBAL makeRTLResource(int dialogID, DLGTEMPLATE **ppMyDlgTemplate);
 };
 
 #endif //STATIC_DIALOG_H

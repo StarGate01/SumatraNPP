@@ -18,6 +18,35 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="NPP\GUI\DockingDlgInterface.cpp" />
+    <ClCompile Include="NPP\GUI\MainPanelDlg.cpp" />
+    <ClCompile Include="NPP\GUI\StaticDialog.cpp" />
+    <ClCompile Include="NPP\GUI\Window.cpp" />
+    <ClCompile Include="PluginDefinition.cpp" />
+    <ClCompile Include="SumatraNPP.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="NPP\GUI\Docking.h" />
+    <ClInclude Include="NPP\GUI\DockingDlgInterface.h" />
+    <ClInclude Include="NPP\GUI\DockingResource.h" />
+    <ClInclude Include="NPP\GUI\MainPanelDlg.h" />
+    <ClInclude Include="NPP\GUI\resource.h" />
+    <ClInclude Include="NPP\GUI\StaticDialog.h" />
+    <ClInclude Include="NPP\GUI\Window.h" />
+    <ClInclude Include="NPP\MenuCmdID.h" />
+    <ClInclude Include="NPP\Notepad_plus_msgs.h" />
+    <ClInclude Include="NPP\PluginInterface.h" />
+    <ClInclude Include="NPP\Scintilla.h" />
+    <ClInclude Include="PluginDefinition.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="NPP\GUI\mainPanel.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="NPP\GUI\Res\sumatrapdf-icon.ico" />
+    <Image Include="NPP\GUI\Res\sumatrapdf-image.bmp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1590D7CD-7D3A-4AB7-A355-EE02F7FB987D}</ProjectGuid>
     <RootNamespace>SumatraNPP</RootNamespace>
@@ -169,7 +198,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>shlwapi.lib;comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)SumatraNPP_Debug.dll</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)SumatraNPP.pdb</ProgramDatabaseFile>
@@ -180,33 +209,11 @@
     <PostBuildEvent>
       <Command>xcopy /y "$(SolutionDir)$(OutDir)*.dll" "C:\Program Files (x86)\Notepad++\plugins"</Command>
     </PostBuildEvent>
+    <Manifest>
+      <AdditionalManifestFiles>
+      </AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="DockingFeature\MainPanelDlg.cpp" />
-    <ClCompile Include="DockingFeature\StaticDialog.cpp" />
-    <ClCompile Include="SumatraNPP.cpp" />
-    <ClCompile Include="PluginDefinition.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="DockingFeature\Docking.h" />
-    <ClInclude Include="DockingFeature\DockingDlgInterface.h" />
-    <ClInclude Include="DockingFeature\dockingResource.h" />
-    <ClInclude Include="DockingFeature\MainPanelDlg.h" />
-    <ClInclude Include="DockingFeature\resource.h" />
-    <ClInclude Include="DockingFeature\StaticDialog.h" />
-    <ClInclude Include="DockingFeature\Window.h" />
-    <ClInclude Include="menuCmdID.h" />
-    <ClInclude Include="Notepad_plus_msgs.h" />
-    <ClInclude Include="PluginDefinition.h" />
-    <ClInclude Include="PluginInterface.h" />
-    <ClInclude Include="Scintilla.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="DockingFeature\mainPanel.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="DockingFeature\sumatrapdf-icon.ico" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
