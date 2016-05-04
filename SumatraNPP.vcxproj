@@ -41,6 +41,7 @@
     <ClInclude Include="PluginDefinition.h" />
   </ItemGroup>
   <ItemGroup>
+    <ResourceCompile Include="app.rc" />
     <ResourceCompile Include="NPP\GUI\mainPanel.rc" />
   </ItemGroup>
   <ItemGroup>

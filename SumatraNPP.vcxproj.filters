@@ -60,6 +60,9 @@
     <ResourceCompile Include="NPP\GUI\mainPanel.rc">
       <Filter>Resource files</Filter>
     </ResourceCompile>
+    <ResourceCompile Include="app.rc">
+      <Filter>Resource files</Filter>
+    </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="NPP\GUI\Res\sumatrapdf-image.bmp">
