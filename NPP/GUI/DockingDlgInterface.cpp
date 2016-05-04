@@ -19,46 +19,46 @@
 #include <Shlobj.h>
 #include <shlwapi.h>
 #include "../Notepad_plus_msgs.h"
-#include "dockingResource.h"
+#include "DockingResource.h"
 #include "DockingDlgInterface.h"
 
 BOOL CALLBACK DockingDlgInterface::run_dlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
-	case WM_NOTIFY:
-	{
-		LPNMHDR	pnmh = (LPNMHDR)lParam;
-		if (pnmh->hwndFrom == _hParent)
+		case WM_NOTIFY:
 		{
-			switch (LOWORD(pnmh->code))
+			LPNMHDR	pnmh = (LPNMHDR)lParam;
+			if (pnmh->hwndFrom == _hParent)
 			{
-				case DMN_CLOSE:
+				switch (LOWORD(pnmh->code))
 				{
-					break;
-				}
-				case DMN_FLOAT:
-				{
-					_isFloating = true;
-					break;
-				}
-				case DMN_DOCK:
-				{
-					_isFloating = false;
-					break;
-				}
-				default:
-				{
-					break;
+					case DMN_CLOSE:
+					{
+						break;
+					}
+					case DMN_FLOAT:
+					{
+						_isFloating = true;
+						break;
+					}
+					case DMN_DOCK:
+					{
+						_isFloating = false;
+						break;
+					}
+					default:
+					{
+						break;
+					}
 				}
 			}
+			break;
 		}
-		break;
-	}
-	default:
-	{
-		break;
-	}
+		default:
+		{
+			break;
+		}
 	}
 	return FALSE;
 };

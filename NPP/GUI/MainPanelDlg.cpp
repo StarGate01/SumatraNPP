@@ -19,6 +19,7 @@
 #include <Shlobj.h>
 #include "MainPanelDlg.h"
 #include "PluginDefinition.h"
+#include "DockingResource.h"
 #include "resource.h"
 
 extern NppData nppData;
@@ -48,6 +49,11 @@ BOOL CALLBACK MainPanelDlg::run_dlgProc(HWND hwnd, UINT message, WPARAM wParam, 
 			HWND hChild = ::FindWindowEx(hwnd, nullptr, nullptr, nullptr);
 			if (hChild) ::RedrawWindow(hChild, uRect, NULL, RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_INTERNALPAINT);
 			break;
+		}
+		case WM_NOTIFY:
+		{
+			LPNMHDR	pnmh = (LPNMHDR)lParam;
+			if (pnmh->hwndFrom == nppData._nppHandle && LOWORD(pnmh->code) == DMN_CLOSE) display(false);
 		}
 		case WM_COPYDATA :
 		{
