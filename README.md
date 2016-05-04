@@ -1,5 +1,5 @@
 # SumatraNPP
-Embeds Sumatra PDF viwer into Notepad++
+Embeds Sumatra PDF viewer into Notepad++
 
 SumatraPDF has to be found in PATH.
 
