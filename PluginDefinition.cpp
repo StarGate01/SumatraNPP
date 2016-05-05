@@ -189,7 +189,6 @@ void forwardSearch()
 	if (_mainPanel.isCreated())
 	{
 		int cLine = ::SendMessage(nppData._nppHandle, NPPM_GETCURRENTLINE, NULL, NULL);
-		int cCol = ::SendMessage(nppData._nppHandle, NPPM_GETCURRENTCOLUMN, NULL, NULL);
 		TCHAR* fullPathName = getFullCurrentFileName();
 		DWORD dwAttrib = ::GetFileAttributes(fullPathName);
 		if (dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY))
@@ -198,21 +197,9 @@ void forwardSearch()
 			memcpy(pdfFullPathName, fullPathName, (wcslen(fullPathName) + 1) * sizeof(TCHAR));
 			if (getPDFFile(pdfFullPathName)) 
 			{
-				_mainPanel.forwardSearch(pdfFullPathName, fullPathName, cLine, cCol);
+				_mainPanel.forwardSearch(pdfFullPathName, fullPathName, cLine + 1, 0);
 			}
-			/*else
-			{
-				TCHAR buffer[MAX_PATH + 30];
-				swprintf(buffer, L"PDF file does not exist!\n%s", fullPathName);
-				::MessageBox(nppData._nppHandle, buffer, ERRTITLE, MB_ICONERROR | MB_OK);
-			}*/
 		}
-		/*else
-		{
-			TCHAR buffer[MAX_PATH + 30];
-			swprintf(buffer, L"TEX file does not exist!\n%s", fullPathName);
-			::MessageBox(nppData._nppHandle, buffer, ERRTITLE, MB_ICONERROR | MB_OK);
-		}*/
 	}
 }
 
