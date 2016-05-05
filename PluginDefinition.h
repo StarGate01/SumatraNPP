@@ -28,7 +28,7 @@
 #define ERRTITLE L"SumatraNPP - Error"
 
 const TCHAR NPP_PLUGIN_NAME[] = L"SumatraNPP";
-const int nbFunc = 6;
+const int nbFunc = 5;
 
 void pluginInit(HANDLE hModule);
 void pluginCleanUp();
@@ -43,7 +43,6 @@ void setMainPanelDlgEx(int show);
 
 void loadCurrentPDF();
 void loadOtherPDF();
-void reloadLastPDF();
 void toggleMainPanelDlg();
 void forwardSearch();
 void about();

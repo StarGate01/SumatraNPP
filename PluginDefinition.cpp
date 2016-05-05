@@ -30,7 +30,6 @@ FuncItem funcItem[nbFunc];
 NppData nppData;
 HICON icon;
 HBITMAP iconBitmap;
-TCHAR* lastPDFFile = new TCHAR[0];
 
 void pluginInit(HANDLE hModule)
 {
@@ -49,9 +48,8 @@ void commandMenuInit()
     setCommand(0, L"Show SumatraNPP window", toggleMainPanelDlg);
 	setCommand(1, L"Open corresponding PDF", loadCurrentPDF);
 	setCommand(2, L"Open arbitrary PDF", loadOtherPDF);
-	setCommand(3, L"Reload current PDF", reloadLastPDF);
-	setCommand(4, L"Forward search", forwardSearch);
-	setCommand(5, L"About", about);
+	setCommand(3, L"Forward search", forwardSearch);
+	setCommand(4, L"About", about);
 }
 
 void commandMenuCleanUp()
@@ -98,8 +96,6 @@ void loadPDFbyName(TCHAR* fullPathName)
 			L"Cannot start SumatraPDF.exe\nEither the file was not found,\nor the DDE connection failed!",
 			ERRTITLE, MB_ICONERROR | MB_OK);
 	}
-	realloc(lastPDFFile, wcslen(fullPathName) * sizeof(TCHAR) + 1);
-	wcscpy(lastPDFFile, fullPathName);
 }
 
 void setMainPanelDlgEx(int show)
@@ -169,18 +165,6 @@ void loadOtherPDF()
 	if (::GetOpenFileName(&ofn))
 	{
 		loadPDFbyName(ofn.lpstrFile);
-	}
-}
-
-void reloadLastPDF()
-{
-	if (lastPDFFile)
-	{
-		DWORD dwAttrib = ::GetFileAttributes(lastPDFFile);
-		if(dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY))
-		{
-			loadPDFbyName(lastPDFFile);
-		}
 	}
 }
 
