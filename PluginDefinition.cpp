@@ -193,8 +193,8 @@ void about()
 SumatraNPP - SumatraPDF Plugin for Notepad++\n\
 Version 1.0 by Christoph Honal\n\n\
 Use the plugin menu when a .tex file is opened.\n\
-Double click on the text to jump to the \n\
-corresponding position in the PDF.",
+Double click on the text in one document to jump to the \n\
+corresponding position in the other document.",
 L"SumatraNPP - About", MB_ICONINFORMATION | MB_OK);
 }
 
