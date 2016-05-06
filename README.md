@@ -12,6 +12,7 @@ You'll need my patched version of SumatraPDF 32 bit (3 Lines Changed): https://g
     - Note: compile with -synctex=1
  - Low memory- and cpu usage
  - Note: This does not contain a compiler.
+ - Note: As of now, only single-tex-file documents are supported. But I'm sure you could hack something fitting together.
  
 ##Example setup:
 Note: This is just my setup. You can use many other configurations.
@@ -23,10 +24,10 @@ Note: This is just my setup. You can use many other configurations.
  - Install ```SumatraNPP``` and ```NPPExec Plugins``` in Notepad++
     - Copy ```SumatraNPP.dll``` to ```C:\Program Files (x86)\Notepad++\plugins\```
     - Use Plugin Manager to install ```NPPExec```
- - Install ```MinGW```, make sure to include ```make``` utility
+ - Install ```MinGW```, make sure to include ```make``` utility, ensure ```make``` is in ```%PATH%``` ```(C:\MinGW\msys\1.0\bin)```
  - Configure ```NPPExec```:
 ```
-NPP_SAVEALL
+NPP_SAVE
 cd $(CURRENT_DIRECTORY)
 make build
 NPP_MENUCOMMAND Plugins/SumatraNPP/Open corresponding PDF
