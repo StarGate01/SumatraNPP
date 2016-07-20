@@ -18,7 +18,7 @@ You'll need my patched version of SumatraPDF 32 bit (3 Lines Changed): https://g
 Note: This is just my setup. You can use many other configurations.
  - Install ```Notepad++``` to ```C:\Program Files (x68)\Notepad++\```
  - Install ```MiKTeX``` somewhere and ensure it can be found in ```%PATH%```
- - Install ```SumatraNPP x86``` to ```C:\Program Files (x86)\SumatraPDF\```
+ - Install ```SumatraPDF x86``` to ```C:\Program Files (x86)\SumatraPDF\```
  - Replace ```SumatraPDF.exe``` with patched version ```(sumatrapdf\rel\SumatraPDF-no-MUPDF.exe)```
  - Add ```"C:\Program Files (x86)\SumatraPDF"``` to ```%PATH%``` variable
  - Install ```SumatraNPP``` and ```NPPExec Plugins``` in Notepad++
