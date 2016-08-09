@@ -46,7 +46,10 @@ void pluginCleanUp()
 void commandMenuInit()
 {
     setCommand(0, L"Show SumatraNPP window", toggleMainPanelDlg);
-	setCommand(1, L"Open corresponding PDF", loadCurrentPDF);
+	ShortcutKey *shKeyOCP = new ShortcutKey(); //Ctrl + F7
+	shKeyOCP->_isCtrl = true;
+	shKeyOCP->_key = 0x76;
+	setCommand(1, L"Open corresponding PDF", loadCurrentPDF, shKeyOCP);
 	setCommand(2, L"Open arbitrary PDF", loadOtherPDF);
 	setCommand(3, L"Forward search", forwardSearch);
 	setCommand(4, L"About", about);
@@ -56,12 +59,12 @@ void commandMenuCleanUp()
 {
 }
 
-void setCommand(UINT32 index, TCHAR *cmdName, PFUNCPLUGINCMD pFunc)
+void setCommand(UINT32 index, TCHAR *cmdName, PFUNCPLUGINCMD pFunc, ShortcutKey *shKey)
 {
 	lstrcpy(funcItem[index]._itemName, cmdName);
 	funcItem[index]._pFunc = pFunc;
 	funcItem[index]._init2Check = false;
-	funcItem[index]._pShKey = NULL;
+	funcItem[index]._pShKey = shKey;
 }
 
 #pragma region
@@ -73,18 +76,23 @@ TCHAR* getFullCurrentFileName()
 	int length = ::SendMessage(nppData._nppHandle, NPPM_GETFULLPATHFROMBUFFERID, currentBufferId, NULL);
 	TCHAR* fullPathName = new TCHAR[length + 1];
 	::SendMessage(nppData._nppHandle, NPPM_GETFULLPATHFROMBUFFERID, currentBufferId, (LPARAM)fullPathName);
+	DWORD dwAttrib = ::GetFileAttributes(fullPathName);
+	if (dwAttrib == INVALID_FILE_ATTRIBUTES || (dwAttrib & FILE_ATTRIBUTE_DIRECTORY)) return NULL;
 	return fullPathName;
 }
 
-BOOL getPDFFile(TCHAR* fullPathName)
+TCHAR* getPDFFile(TCHAR* fullPathName)
 {
-	::PathRemoveExtension(fullPathName);
-	TCHAR* pdfPathName = new TCHAR[wcslen(fullPathName) + 4];
-	swprintf(pdfPathName, (wcslen(fullPathName) + 4) * sizeof(TCHAR), L"%s.pdf", fullPathName);
-	realloc(fullPathName, wcslen(pdfPathName) * sizeof(TCHAR) + 1);
-	memcpy(fullPathName, pdfPathName, wcslen(pdfPathName) * sizeof(TCHAR) + 1);
+	int pathLength = wcslen(fullPathName) + 1;
+	TCHAR* fullPathNameBku = new TCHAR[pathLength];
+	memcpy(fullPathNameBku, fullPathName, pathLength * sizeof(TCHAR));
+	::PathRemoveExtension(fullPathNameBku);
+	TCHAR* pdfPathName = new TCHAR[pathLength + 4];
+	swprintf(pdfPathName, (pathLength + 4) * sizeof(TCHAR), L"%s.pdf", fullPathNameBku);
+	delete[] fullPathNameBku;
 	DWORD dwAttrib = ::GetFileAttributes(pdfPathName);
-	return (dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+	if (dwAttrib == INVALID_FILE_ATTRIBUTES || (dwAttrib & FILE_ATTRIBUTE_DIRECTORY)) return NULL;
+	return pdfPathName;
 }
 
 void loadPDFbyName(TCHAR* fullPathName)
@@ -112,14 +120,8 @@ void setMainPanelDlgEx(int show)
 		::SendMessage(nppData._nppHandle, NPPM_DMMREGASDCKDLG, 0, (LPARAM)&data);
 		_mainPanel.display(false);
 	}
-	if (show == TOGGLEDLG)
-	{
-		_mainPanel.display(!_mainPanel.isVisible());
-	}
-	else
-	{
-		_mainPanel.display(show == SHOWDLG);
-	}
+	if (show == TOGGLEDLG) _mainPanel.display(!_mainPanel.isVisible());
+	else _mainPanel.display(show == SHOWDLG);
 }
 
 #pragma endregion Helper functions
@@ -134,16 +136,19 @@ void toggleMainPanelDlg()
 void loadCurrentPDF()
 {
 	TCHAR* fullPathName = getFullCurrentFileName();
-	if(getPDFFile(fullPathName))
+	if (fullPathName)
 	{
-		loadPDFbyName(fullPathName);
+		TCHAR* pdfFullPathName = getPDFFile(fullPathName);
+		if (pdfFullPathName) loadPDFbyName(pdfFullPathName);
+		else
+		{
+			TCHAR buffer[MAX_PATH + 30];
+			swprintf(buffer, MAX_PATH + 30, L"PDF file does not exist!\n%s", fullPathName);
+			::MessageBox(nppData._nppHandle, buffer, ERRTITLE, MB_ICONERROR | MB_OK);
+		}
+		delete[] pdfFullPathName;
 	}
-	else
-	{
-		TCHAR buffer[MAX_PATH + 30];
-		swprintf(buffer, MAX_PATH + 30, L"PDF file does not exist!\n%s", fullPathName);
-		::MessageBox(nppData._nppHandle, buffer, ERRTITLE, MB_ICONERROR | MB_OK);
-	}
+	delete[] fullPathName;
 }
 
 void loadOtherPDF()
@@ -162,28 +167,22 @@ void loadOtherPDF()
 	ofn.lpstrInitialDir = NULL;
 	ofn.lpstrTitle = L"SumatraNPP - Open PDF File";
 	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-	if (::GetOpenFileName(&ofn))
-	{
-		loadPDFbyName(ofn.lpstrFile);
-	}
+	if (::GetOpenFileName(&ofn)) loadPDFbyName(ofn.lpstrFile);
 }
 
 void forwardSearch()
 {
-	if (_mainPanel.isCreated())
+	if (_mainPanel.isCreated() && _mainPanel.isShown() && _mainPanel.getOpenedPDF())
 	{
 		int cLine = ::SendMessage(nppData._nppHandle, NPPM_GETCURRENTLINE, NULL, NULL);
 		TCHAR* fullPathName = getFullCurrentFileName();
-		DWORD dwAttrib = ::GetFileAttributes(fullPathName);
-		if (dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY))
+		if (fullPathName)
 		{
-			TCHAR* pdfFullPathName = new TCHAR[wcslen(fullPathName)];
-			memcpy(pdfFullPathName, fullPathName, (wcslen(fullPathName) + 1) * sizeof(TCHAR));
-			if (getPDFFile(pdfFullPathName)) 
-			{
-				_mainPanel.forwardSearch(pdfFullPathName, fullPathName, cLine + 1, 0);
-			}
+			TCHAR* pdfFullPathName = getPDFFile(fullPathName);
+			if (pdfFullPathName && wcscmp(_mainPanel.getOpenedPDF(), pdfFullPathName) == 0) _mainPanel.forwardSearch(pdfFullPathName, fullPathName, cLine + 1, 0);
+			delete[] pdfFullPathName;
 		}
+		delete[] fullPathName;
 	}
 }
 

@@ -25,6 +25,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 class DockingDlgInterface : public StaticDialog
 {
+
 public:
 	DockingDlgInterface();
 	DockingDlgInterface(int dlgID);
@@ -32,18 +33,20 @@ public:
 	virtual void create(tTbData * data, bool isRTL);
 	virtual void updateDockingDlg(void);
 	virtual void destroy();
+	virtual bool isShown();
 	virtual void display(bool toShow);
 	virtual TCHAR * DockingDlgInterface::getPluginFileName();
 
 protected :
 	virtual BOOL CALLBACK run_dlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
-
     HWND _HSource;
 	tTbData* _data;
 	int _dlgID;
 	bool _isFloating;
+	bool _isShown;
 	TCHAR _moduleName[MAX_PATH];
 	TCHAR _pluginName[MAX_PATH];
+
 };
 
 #endif // DOCKINGDLGINTERFACE_H

@@ -99,8 +99,14 @@ void DockingDlgInterface::updateDockingDlg(void)
 {
 };
 
+bool DockingDlgInterface::isShown()
+{
+	 return _isShown;
+};
+
 void DockingDlgInterface::display(bool toShow = true)
 {
+	_isShown = toShow;
 	::SendMessage(_hParent, toShow ? NPPM_DMMSHOW : NPPM_DMMHIDE, 0, (LPARAM)_hSelf);
 };
 

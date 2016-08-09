@@ -42,6 +42,7 @@ public :
     virtual void display(bool toShow);
 	virtual LRESULT openPDF(TCHAR* fileName);
 	virtual void forwardSearch(TCHAR* pdfFile, TCHAR* srcFile, int lineNr, int colNr);
+	virtual TCHAR* getOpenedPDF();
 
 protected :
 	virtual BOOL CALLBACK run_dlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -52,6 +53,8 @@ private :
 	ATOM ddeAppAtom, ddeTopicAtom;
 	DDEState ddeState = NotReady;
 	HGLOBAL ddePayloadGlobal = nullptr;
+	TCHAR* openedPDF;
+	//static BOOL CALLBACK EnumThreadWndProc(_In_ HWND hwnd, _In_ LPARAM lParam);
 	virtual void connectDDE();
 	virtual void disconnectDDE();
 	virtual void handleDDEack(WPARAM wParam, LPARAM lParam);

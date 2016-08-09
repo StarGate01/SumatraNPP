@@ -38,16 +38,16 @@ BOOL CALLBACK MainPanelDlg::run_dlgProc(HWND hwnd, UINT message, WPARAM wParam, 
 			RECT* rcClient = new RECT;
 			::GetWindowRect(hwnd, rcClient);
 			::MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), (LPPOINT)rcClient, 2);
-			HWND hChild = ::FindWindowEx(hwnd, nullptr, nullptr, nullptr);
-			if (hChild) ::MoveWindow(hChild, rcClient->left, rcClient->top, rcClient->right - rcClient->left, rcClient->bottom - rcClient->top, FALSE);
+			if (hwnd_sumatra) ::MoveWindow(hwnd_sumatra, rcClient->left, rcClient->top, rcClient->right - rcClient->left, rcClient->bottom - rcClient->top, FALSE);
+			delete rcClient;
 			break;
 		}
 		case WM_PAINT :
 		{
 			RECT* uRect = new RECT;
 			::GetUpdateRect(hwnd, uRect, TRUE);
-			HWND hChild = ::FindWindowEx(hwnd, nullptr, nullptr, nullptr);
-			if (hChild) ::RedrawWindow(hChild, uRect, NULL, RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_INTERNALPAINT);
+			if (hwnd_sumatra) ::RedrawWindow(hwnd_sumatra, uRect, NULL, RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_INTERNALPAINT);
+			delete uRect;
 			break;
 		}
 		case WM_NOTIFY:
@@ -57,18 +57,18 @@ BOOL CALLBACK MainPanelDlg::run_dlgProc(HWND hwnd, UINT message, WPARAM wParam, 
 		}
 		case WM_COPYDATA :
 		{
-			HWND hChild = ::FindWindowEx(hwnd, nullptr, nullptr, nullptr);
-			if (hChild)
+			if (hwnd_sumatra)
 			{
 				COPYDATASTRUCT *cds = (COPYDATASTRUCT *)lParam;
-				if (cds && 0x4C5255 == cds->dwData && (HWND)wParam == hChild)
+				if (cds && 0x4C5255 == cds->dwData && (HWND)wParam == hwnd_sumatra)
 				{
 					char* lpData = (char *)cds->lpData;
 					int newSize = strlen(lpData) + 1;
 					TCHAR* wideLpData = new TCHAR[newSize];
 					size_t convertedChars = 0;
 					mbstowcs_s(&convertedChars, wideLpData, newSize, lpData, _TRUNCATE);
-					::ShellExecute(hChild, L"open", wideLpData, NULL, NULL, SW_SHOW);
+					::ShellExecute(hwnd_sumatra, L"open", wideLpData, NULL, NULL, SW_SHOW);
+					delete[] wideLpData;
 					return TRUE;
 				}
 			}
@@ -108,22 +108,41 @@ void MainPanelDlg::display(bool toShow)
 LRESULT MainPanelDlg::openPDF(TCHAR * fileName)
 {
 	ddeState = NotReady;
-	HWND hChild = ::FindWindowEx(_hSelf, nullptr, nullptr, nullptr);
-	if (hChild)
+	if (hwnd_sumatra)
 	{
 		disconnectDDE();
-		SendMessage(hChild, WM_DESTROY, NULL, NULL);
+		::SendMessage(hwnd_sumatra, WM_DESTROY, NULL, NULL);
 	}
+	if (openedPDF) delete[] openedPDF;
+	openedPDF = NULL;
 	TCHAR cmdLine[MAX_PATH+60];
 	swprintf(cmdLine, MAX_PATH + 60, L"SumatraPDF.exe -plugin %d \"%s\"", (int)_hSelf, fileName);
 	STARTUPINFO si = { sizeof(si) };
 	PROCESS_INFORMATION pi;
 	if (!CreateProcess(0, cmdLine, 0, 0, FALSE, 0, 0, 0, &si, &pi)) return E_FAIL;
 	if (::WaitForInputIdle(pi.hProcess, INFINITE) != S_OK) return E_FAIL;
+	//::EnumThreadWindows(pi.dwThreadId, &(EnumThreadWndProc), (LPARAM)this);
+	hwnd_sumatra = NULL;
+	hwnd_sumatra = ::FindWindowEx(_hSelf, NULL, L"SUMATRA_PDF_FRAME", NULL);
+	if (hwnd_sumatra == NULL) return E_FAIL;
+	int pathLength = wcslen(fileName) + 1;
+	openedPDF = new TCHAR[pathLength];
+	memcpy(openedPDF, fileName, pathLength * sizeof(TCHAR));
 	ddeState = Ready;
 	connectDDE();
 	return S_OK;
 }
+
+//BOOL MainPanelDlg::EnumThreadWndProc(HWND hwnd, LPARAM lParam)
+//{
+//	MainPanelDlg* dlg = (MainPanelDlg*)lParam;
+//	dlg->hwnd_sumatra = hwnd;
+//	WCHAR dbgString[11];
+//	swprintf(dbgString, L"%08X\n", hwnd);
+//	OutputDebugString(dbgString);
+//	return TRUE;
+//}
+
 
 void MainPanelDlg::forwardSearch(TCHAR* pdfFile, TCHAR* srcFile, int lineNr, int colNr)
 {
@@ -132,12 +151,16 @@ void MainPanelDlg::forwardSearch(TCHAR* pdfFile, TCHAR* srcFile, int lineNr, int
 	return executeDDE(buffer);
 }
 
+TCHAR* MainPanelDlg::getOpenedPDF()
+{
+	return openedPDF;
+}
+
 #pragma region
 
 void MainPanelDlg::connectDDE()
 {
 	if (ddeState != Ready) return;
-	hwnd_sumatra = ::FindWindowEx(_hSelf, nullptr, nullptr, nullptr);
 	if (!hwnd_sumatra) return;
 	ddeState = WaitForInitAck;
 	::SendMessage(hwnd_sumatra, WM_DDE_INITIATE, (WPARAM)_hSelf, MAKELPARAM(ddeAppAtom, ddeTopicAtom));

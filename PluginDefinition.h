@@ -34,10 +34,10 @@ void pluginInit(HANDLE hModule);
 void pluginCleanUp();
 void commandMenuInit();
 void commandMenuCleanUp();
-void setCommand(size_t index, TCHAR *cmdName, PFUNCPLUGINCMD pFunc);
+void setCommand(UINT32 index, TCHAR *cmdName, PFUNCPLUGINCMD pFunc, ShortcutKey *shKey = NULL);
 
 TCHAR* getFullCurrentFileName();
-BOOL getPDFFile(TCHAR* fullPathName);
+TCHAR* getPDFFile(TCHAR* fullPathName);
 void loadPDFbyName(TCHAR* fullPathName);
 void setMainPanelDlgEx(int show);
 
